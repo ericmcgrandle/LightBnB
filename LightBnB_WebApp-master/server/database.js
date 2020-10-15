@@ -1,18 +1,6 @@
-const { Client, Pool }  = require('pg');
-
-const pool = new Pool({
-  user: 'vagrant',
-  database: 'lightbnb',
-  host: 'localhost',
-  password: '123'
-});
-
-pool.connect(() => {
-  console.log('Connected to DB');
-})
-
 const properties = require('./json/properties.json');
 const users = require('./json/users.json');
+const pool = require('../db/index.js');
 
 /// Users
 
@@ -97,12 +85,12 @@ const getAllProperties = function(options, limit = 5) {
   let needAnd = false;
 
   let queryString = 
-    `SELECT properties.*, AVG(property_reviews.rating) as avg_rating 
+    `SELECT properties.*, AVG(property_reviews.rating) as average_rating 
     FROM properties
-    JOIN property_reviews ON (properties.id = property_reviews.property_id)`;
+    JOIN property_reviews ON (properties.id = property_id) `;
 
   if (options.owner_id) {
-    queryParams.push(options.owner_id);
+    queryParams.push(Number(options.owner_id));
     queryString += `WHERE owner_id = $${queryParams.length} `;
     needAnd = true;
   }
@@ -151,8 +139,8 @@ const getAllProperties = function(options, limit = 5) {
   queryString += `GROUP BY properties.id `;
 
   if (options.minimum_rating) {
-    queryParams.push(Number(options.minimum_rating));
-    queryString += `HAVING AVG(property_reviews.rating) >= $${queryParams.length} `;
+    queryParams.push(options.minimum_rating);
+    queryString += `HAVING avg(property_reviews.rating) >= $${queryParams.length} `;
   }
 
   queryParams.push(limit);
@@ -160,9 +148,10 @@ const getAllProperties = function(options, limit = 5) {
   ORDER BY cost_per_night
   LIMIT $${queryParams.length};
   `; 
-   
+     
   return pool.query(queryString, queryParams)
    .then(res => res.rows);
+  
 };
 exports.getAllProperties = getAllProperties;
 

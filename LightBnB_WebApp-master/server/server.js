@@ -10,6 +10,9 @@ const bodyParser = require('body-parser');
 
 const app = express();
 
+//Connection
+const pool = require('../db/index.js');
+
 app.use(cookieSession({
   name: 'session',
   keys: ['key1']
